@@ -25,9 +25,9 @@ class Reader():
         # criterios -> ['Crímenes', 'Robo', 'Relacionado con...', 'Orden Público', 'Drogas']
         # clases -> ['ALTO', 'MEDIO', 'BAJO']
         # matriz -> [[20, 100, 160], [5000, 95000, 180000], ...]
-
+        df = pd.DataFrame(matriz,index=criterios,columns=clases)
         #print(criterios, clases, matriz)
-        return matriz
+        return matriz,df
 
     def read_all(self,path):
         df = pd.read_excel(path)

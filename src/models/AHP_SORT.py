@@ -2,6 +2,7 @@ import math
 
 import numpy as np
 import pandas
+import pandas as pd
 
 from ..utils import Reader, Eigenvalue
 
@@ -20,11 +21,19 @@ class AHP_SORT():
         reader = Reader()
         print("Leyendo datos...")
         self.alternativas, self.criterios, self.data = reader.read_all(path_data)
-        self.priorities_criterios = reader.read(path_criterios)
-        self.classes = reader.read(path_clases)
+        self.data_df = pd.DataFrame(self.data,index=self.alternativas,columns=self.criterios)
+        self.priorities_criterios,self.priorities_criterios_df = reader.read(path_criterios)
+        self.classes, self.classes_df = reader.read(path_clases)
+
         self.priorities_rp_cp = []
+        self.priorities_rp_cp_df = []
+
         for path in paths_prioridades:
-            self.priorities_rp_cp.append(reader.read(path))
+
+            val1 , val2 = reader.read(path)
+
+            self.priorities_rp_cp.append(val1)
+            self.priorities_rp_cp_df.append(val2)
 
         self.global_criterios = None
         self.global_classes = None
@@ -38,26 +47,23 @@ class AHP_SORT():
 
         # Por cada alternativa, determinar su clase
         ranking = []
-        for i, value in enumerate(self.global_alternatives):
-            found = False
 
-            for j, class_value in enumerate(self.global_classes):
-                # Evitar acceso fuera de rango para self.global_classes[j+1]
-                if j < len(self.global_classes) - 1:
-                    next_class_value = self.global_classes[j + 1]
-                    # Comparar valor con la clase actual y la siguiente
-                    if (value <= class_value) and (math.fabs(class_value - value) <= math.fabs(next_class_value - value)):
-                        ranking.append(j + 1)
-                        found = True
-                        break
-                    elif value <= class_value:
-                        ranking.append(j + 2)  # Clase siguiente
-                        found = True
-                        break
-
-            # Si no se encuentra clase (caso final)
-            if not found:
+        for j,value_alt in enumerate(self.global_alternatives):
+            #Si el valor es mayor que el primer valor de la clase entonces es dicha clase
+            if value_alt >= self.global_classes[0]:
+                ranking.append(1)
+            #Si el valor es menor que el último valor pasa lo mismo
+            elif value_alt <= self.global_classes[-1]:
                 ranking.append(len(self.global_classes))
+            else:
+                for i in range(0,len(self.global_classes)-1):
+                    #Optimista
+                    if math.fabs(value_alt-self.global_classes[i]) <= math.fabs(value_alt-self.global_classes[i+1]):
+                        ranking.append(i+1)
+                        break
+                    else:
+                        ranking.append(i+2)
+                        break
         result = {}
         result['Alternatives'] = self.alternativas
         global_alternatives = [value.real for value in self.global_alternatives]
@@ -72,6 +78,7 @@ class AHP_SORT():
         print("Obteniendo pesos criterios...")
         e = Eigenvalue()
         eigenvalue, eigenvector_norm = e.obtain_eigenvector_normalized(self.priorities_criterios)
+        self.priorities_criterios_df['Global'] = eigenvector_norm
         self.global_criterios = eigenvector_norm
 
     def obtain_classes_weights(self):
@@ -82,7 +89,7 @@ class AHP_SORT():
             for i, value in enumerate(row):
                 sum += value * self.global_criterios[i]
             wclasses.append(sum.real)
-
+        self.classes_df['Global'] = wclasses
         self.global_classes = np.array(wclasses)
 
     def obtain_priorities_alternatives(self):
@@ -101,7 +108,7 @@ class AHP_SORT():
                 weight += priority * self.global_criterios[i]
 
             alternatives_priorities.append(weight)
-
+        self.data_df['Global'] = alternatives_priorities
         self.global_alternatives = np.array(alternatives_priorities)
 
     def priority_alternative(self, id_criterio, value_alternative):
