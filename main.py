@@ -1,7 +1,7 @@
 from src.models import AHP_SORT
 
 if __name__ == '__main__':
-    path_data = './data/crimenes_andalucia_norm.xlsx'
+    path_data = './data/crimenes_spain_2023_norm.xlsx'
     path_criterios = './data/Comp_criterios.xlsx'
     path_classes = './data/Clases.xlsx'
     # C --> R --> V --> O --> D
@@ -12,7 +12,7 @@ if __name__ == '__main__':
                         './data/Prioridades/PC_DROGAS_Norm.xlsx',
                         ]
 
-    path_result = './results/ejercicio2.xlsx'
+    path_result = './results/ejercicio4.xlsx'
     ahp_sort = AHP_SORT(path_data, path_criterios, path_classes, path_prioridades)
     result = ahp_sort.apply(path_result)
 

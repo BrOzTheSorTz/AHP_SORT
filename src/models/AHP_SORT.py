@@ -48,22 +48,32 @@ class AHP_SORT():
         # Por cada alternativa, determinar su clase
         ranking = []
 
-        for j,value_alt in enumerate(self.global_alternatives):
-            #Si el valor es mayor que el primer valor de la clase entonces es dicha clase
+        for value_alt in self.global_alternatives:
+            # Clasificación para extremos
             if value_alt >= self.global_classes[0]:
                 ranking.append(1)
-            #Si el valor es menor que el último valor pasa lo mismo
             elif value_alt <= self.global_classes[-1]:
                 ranking.append(len(self.global_classes))
             else:
-                for i in range(0,len(self.global_classes)-1):
-                    #Optimista
-                    if math.fabs(value_alt-self.global_classes[i]) <= math.fabs(value_alt-self.global_classes[i+1]):
-                        ranking.append(i+1)
-                        break
-                    else:
-                        ranking.append(i+2)
-                        break
+                # Clasificación para valores intermedios
+                min_distance = float('inf')
+                best_class = None
+                for i in range(len(self.global_classes) - 1):
+                    # Calcula la distancia a los dos valores consecutivos
+                    dist_current = abs(value_alt - self.global_classes[i])
+                    dist_next = abs(value_alt - self.global_classes[i + 1])
+
+                    # Clasificación optimista
+                    if dist_current <= dist_next and dist_current < min_distance:
+                        best_class = i + 1
+                        min_distance = dist_current
+                    elif dist_next < dist_current and dist_next < min_distance:
+                        best_class = i + 2
+                        min_distance = dist_next
+
+                # Asigna la clase encontrada
+                ranking.append(best_class)
+
         result = {}
         result['Alternatives'] = self.alternativas
         global_alternatives = [value.real for value in self.global_alternatives]
@@ -90,6 +100,7 @@ class AHP_SORT():
                 sum += value * self.global_criterios[i]
             wclasses.append(sum.real)
         self.classes_df['Global'] = wclasses
+        print(self.classes_df)
         self.global_classes = np.array(wclasses)
 
     def obtain_priorities_alternatives(self):
